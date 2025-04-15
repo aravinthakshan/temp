@@ -5,14 +5,15 @@ from tkinter import Label, Button, Entry, font, messagebox, Toplevel
 from datetime import date, datetime
 import random
 import string
+# In gui.py, update the imports section at the top of the file
 from connection import (
     login_user, login_admin, register_user, search_train_by_number,
     search_train_by_location, book_ticket, cancel_ticket,
     get_booking_by_pnr, get_all_users, update_user_password,
     delete_user_from_db, add_train, update_train, delete_train,
-    add_station, get_all_stations, get_all_trains
+    add_station, get_all_stations, get_all_trains,
+    Session, Train  # Add these imports
 )
-
 # New color palette
 BG_COLOR = "#0F0F1A"
 TEXT_COLOR = "#EAEAEA"
@@ -83,6 +84,21 @@ def handle_signup(username_entry, password_entry, confirm_password_entry):
     except Exception as e:
         messagebox.showerror("Error", str(e))
 
+def handle_search_by_location(source_entry, dest_entry):
+    src = source_entry.get()
+    dest = dest_entry.get()
+    
+    if not src or not dest:
+        messagebox.showerror("Error", "Please enter both source and destination")
+        return
+        
+    result = search_train_by_location(src, dest)
+    if not result:
+        messagebox.showinfo("No Results", "No trains found for this route")
+        return
+        
+    display_table(result, heading_text="Search Result - Location", back_command=searchTrain)
+
 # Updated search and booking functions
 def handle_search_by_number(entry):
     train_no = entry.get()
@@ -93,16 +109,14 @@ def handle_search_by_number(entry):
     result = search_train_by_number(train_no)
     display_table(result, heading_text="Search Result - Train No.", back_command=searchTrain)
 
-def handle_search_by_location(source_entry, dest_entry):
-    src = source_entry.get()
-    dest = dest_entry.get()
-    
-    if not src or not dest:
-        messagebox.showerror("Error", "Please enter both source and destination")
-        return
-        
-    result = search_train_by_location(src, dest)
-    display_table(result, heading_text="Search Result - Location", back_command=searchTrain)
+def validate_train_id(train_id):
+    """Check if a train_id exists in the database."""
+    session = Session()
+    try:
+        train = session.query(Train).filter_by(train_id=train_id).first()
+        return train is not None
+    finally:
+        session.close()
 
 def handle_book_ticket(train_id_entry, travel_date_entry, passengers_frame):
     if not current_user:
@@ -114,6 +128,22 @@ def handle_book_ticket(train_id_entry, travel_date_entry, passengers_frame):
     
     if not train_id or not travel_date_str:
         messagebox.showerror("Error", "Please enter train ID and travel date")
+        return
+    
+    # Validate the train_id
+    try:
+        train_id_int = int(train_id)
+        # Check if train exists in database
+        session = Session()
+        try:
+            train = session.query(Train).filter_by(train_id=train_id_int).first()
+            if not train:
+                messagebox.showerror("Error", f"Train ID {train_id} does not exist")
+                return
+        finally:
+            session.close()
+    except ValueError:
+        messagebox.showerror("Error", "Train ID must be a number")
         return
     
     try:
@@ -161,7 +191,7 @@ def handle_book_ticket(train_id_entry, travel_date_entry, passengers_frame):
         booking_date = date.today()
         booking_id, pnr = book_ticket(
             current_user['user_id'], 
-            int(train_id), 
+            train_id_int, 
             travel_date, 
             booking_date, 
             passenger_list
@@ -295,6 +325,8 @@ def handle_delete_user(username_entry):
     except Exception as e:
         messagebox.showerror("Error", f"Failed to delete user: {str(e)}")
 
+
+
 # Train management functions
 def handle_add_train(entries):
     train_data = {
@@ -362,6 +394,7 @@ def handle_update_train(entries):
         messagebox.showerror("Error", "IDs must be integers")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to update train: {str(e)}")
+
 
 def handle_delete_train(train_id_entry):
     train_id = train_id_entry.get()
@@ -620,6 +653,9 @@ def bookTicket():
     clear_root()
     heading = Label(root, text="Book Your Ticket", font=HEADING_FONT, bg=BG_COLOR, fg=TEXT_COLOR)
     heading.pack(pady=30)
+
+    # Add a button to view available trains
+    create_button("View Available Trains", lambda: display_table(get_all_trains(), heading_text="Available Trains", back_command=bookTicket)).pack(pady=10)
 
     # Train ID
     train_id_frame = tk.Frame(root, bg=BG_COLOR)
@@ -981,7 +1017,7 @@ def add_passenger_row(parent_frame, passenger_num):
     gender_entry = Entry(passenger_frame, width=8, font=ENTRY_FONT, bg=ENTRY_BG, fg=ENTRY_FG)
     gender_entry.pack(side="left", padx=5)
     gender_entry.winfo_name = lambda: f"gender_{passenger_num}"
-    
-entryPage()
+    entryPage()
+
 root.mainloop()
 
