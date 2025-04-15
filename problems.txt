@@ -1,0 +1,33 @@
+
+1.admin login is taking any credentials and moving on to the next page,
+
++---------+-------------+------------------------------------------------------------------+----------+
+| user_id | username    | password                                                         | is_admin |
++---------+-------------+------------------------------------------------------------------+----------+
+|       1 | admin1      | adminpass                                                        |        1 |
+|       2 | john_doe    | pass123                                                          |        0 |
+|       3 | alice_smith | alicepwd                                                         |        0 |
+|       4 | rohit       | 5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8 |        0 |
+|       5 | tester      | testing                                                          |        0 |
+|       8 | testhello   | hello                                                            |        0 |
++---------+-------------+------------------------------------------------------------------+----------+
+
+Configure login based on this table
+
+2. View all trains is not working
+
+3. train search by number and location are not working
+
+4. ticket booking not working
+
++------------+---------+----------+------------+--------------+-------------+-----------+
+| booking_id | user_id | train_id | pnr_number | booking_date | travel_date | status    |
++------------+---------+----------+------------+--------------+-------------+-----------+
+|          1 |       2 |        1 | PNR1001    | 2025-04-10   | 2025-04-20  | Cancelled |
+|          2 |       3 |        2 | PNR1002    | 2025-04-11   | 2025-04-21  | Confirmed |
++------------+---------+----------+------------+--------------+-------------+-----------+
+
+Make it based on this table
+
+5. remove seat number option
+
