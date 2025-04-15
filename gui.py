@@ -390,20 +390,21 @@ def view_all_trains():
     display_table(trains, heading_text="All Trains", back_command=manageSchedules)
 
 # Station management functions
-def handle_add_station(station_name_entry):
+def handle_add_station(station_name_entry, station_code_entry):
     station_name = station_name_entry.get()
+    station_code = station_code_entry.get()
     
-    if not station_name:
-        messagebox.showerror("Error", "Please enter station name")
+    if not station_name or not station_code:
+        messagebox.showerror("Error", "Please enter station name and code")
         return
     
     try:
-        add_station(station_name)
+        add_station(station_name, station_code)
         messagebox.showinfo("Success", "Station added successfully")
         manageSchedules()
     except Exception as e:
         messagebox.showerror("Error", f"Failed to add station: {str(e)}")
-
+        
 def display_stations():
     stations = get_all_stations()
     
@@ -908,10 +909,16 @@ def addStationPage():
     Label(station_name_frame, text="Station Name", font=LABEL_FONT, bg=BG_COLOR, fg=TEXT_COLOR, width=12, anchor="w").pack(side="left", padx=5)
     station_name_entry = Entry(station_name_frame, width=ENTRY_WIDTH, font=ENTRY_FONT, bg=ENTRY_BG, fg=ENTRY_FG)
     station_name_entry.pack(side="left", padx=5)
-
-    create_button("Add Station", lambda: handle_add_station(station_name_entry)).pack(pady=20)
-    create_back_button(manageStations).pack(pady=10)
     
+    station_code_frame = tk.Frame(root, bg=BG_COLOR)
+    station_code_frame.pack(pady=10)
+    Label(station_code_frame, text="Station Code", font=LABEL_FONT, bg=BG_COLOR, fg=TEXT_COLOR, width=12, anchor="w").pack(side="left", padx=5)
+    station_code_entry = Entry(station_code_frame, width=ENTRY_WIDTH, font=ENTRY_FONT, bg=ENTRY_BG, fg=ENTRY_FG)
+    station_code_entry.pack(side="left", padx=5)
+
+    create_button("Add Station", lambda: handle_add_station(station_name_entry, station_code_entry)).pack(pady=20)
+    create_back_button(manageStations).pack(pady=10)
+
 def searchTrain():
     clear_root()
     heading = Label(root, text="Search Trains", font=HEADING_FONT, bg=BG_COLOR, fg=TEXT_COLOR)
