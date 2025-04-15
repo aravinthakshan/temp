@@ -1,8 +1,8 @@
 # connection.py
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Date, Text, DateTime, func, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Date, Text, DateTime, Time, func, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from datetime import date, datetime
+from datetime import date, datetime, time
 import random
 import string
 
@@ -32,6 +32,7 @@ class Station(Base):
     
     station_id = Column(Integer, primary_key=True)
     station_name = Column(String(100), nullable=False)
+    code = Column(String(10), unique=True, nullable=False)
     
     source_trains = relationship("Train", foreign_keys="Train.source_id", back_populates="source_station")
     destination_trains = relationship("Train", foreign_keys="Train.destination_id", back_populates="destination_station")
@@ -40,13 +41,13 @@ class Train(Base):
     __tablename__ = 'trains'
     
     train_id = Column(Integer, primary_key=True)
-    train_number = Column(String(20), unique=True, nullable=False)
+    train_number = Column(String(10), unique=True, nullable=False)
     train_name = Column(String(100), nullable=False)
-    source_id = Column(Integer, ForeignKey('stations.station_id'), nullable=False)
-    destination_id = Column(Integer, ForeignKey('stations.station_id'), nullable=False)
-    departure_time = Column(String(20), nullable=False)
-    arrival_time = Column(String(20), nullable=False)
-    travel_days = Column(String(100), nullable=False)
+    source_id = Column(Integer, ForeignKey('stations.station_id'))
+    destination_id = Column(Integer, ForeignKey('stations.station_id'))
+    departure_time = Column(Time, nullable=False)
+    arrival_time = Column(Time, nullable=False)
+    travel_days = Column(String(100))
     
     source_station = relationship("Station", foreign_keys=[source_id], back_populates="source_trains")
     destination_station = relationship("Station", foreign_keys=[destination_id], back_populates="destination_trains")
@@ -163,8 +164,8 @@ def search_train_by_number(train_number):
             'train_id': train.train_id,
             'train_number': train.train_number,
             'train_name': train.train_name,
-            'departure_time': train.departure_time,
-            'arrival_time': train.arrival_time,
+            'departure_time': train.departure_time.strftime('%H:%M'),
+            'arrival_time': train.arrival_time.strftime('%H:%M'),
             'travel_days': train.travel_days,
             'source': source_station.station_name if source_station else "Unknown",
             'destination': destination_station.station_name if destination_station else "Unknown"
@@ -197,8 +198,8 @@ def search_train_by_location(source, destination):
                 'train_id': train.train_id,
                 'train_number': train.train_number,
                 'train_name': train.train_name,
-                'departure_time': train.departure_time,
-                'arrival_time': train.arrival_time,
+                'departure_time': train.departure_time.strftime('%H:%M'),
+                'arrival_time': train.arrival_time.strftime('%H:%M'),
                 'travel_days': train.travel_days,
                 'source': source,
                 'destination': destination
@@ -223,9 +224,9 @@ def get_all_trains():
                 'train_id': train.train_id,
                 'train_number': train.train_number,
                 'train_name': train.train_name,
-                'departure_time': train.departure_time,
-                'arrival_time': train.arrival_time,
-                'travel_days': train.travel_days,
+                'departure_time': train.departure_time.strftime('%H:%M'),
+                'arrival_time': train.arrival_time.strftime('%H:%M'),
+                'travel_days': train.travel_days if train.travel_days else "",
                 'source': source_station.station_name if source_station else "Unknown",
                 'destination': destination_station.station_name if destination_station else "Unknown"
             })
@@ -403,13 +404,17 @@ def add_train(train_number, train_name, source_id, destination_id, departure_tim
     """Add a new train to the database."""
     session = Session()
     try:
+        # Convert string time to Time object
+        dep_time = datetime.strptime(departure_time, '%H:%M').time()
+        arr_time = datetime.strptime(arrival_time, '%H:%M').time()
+        
         new_train = Train(
             train_number=train_number,
             train_name=train_name,
             source_id=source_id,
             destination_id=destination_id,
-            departure_time=departure_time,
-            arrival_time=arrival_time,
+            departure_time=dep_time,
+            arrival_time=arr_time,
             travel_days=travel_days
         )
         session.add(new_train)
@@ -437,9 +442,9 @@ def update_train(train_id, train_name=None, source_id=None, destination_id=None,
         if destination_id:
             train.destination_id = destination_id
         if departure_time:
-            train.departure_time = departure_time
+            train.departure_time = datetime.strptime(departure_time, '%H:%M').time()
         if arrival_time:
-            train.arrival_time = arrival_time
+            train.arrival_time = datetime.strptime(arrival_time, '%H:%M').time()
         if travel_days:
             train.travel_days = travel_days
             
@@ -479,11 +484,11 @@ def delete_train(train_id):
 
 # ------------------ STATION MANAGEMENT ------------------
 
-def add_station(station_name):
+def add_station(station_name, station_code):
     """Add a new station to the database."""
     session = Session()
     try:
-        new_station = Station(station_name=station_name)
+        new_station = Station(station_name=station_name, code=station_code)
         session.add(new_station)
         session.commit()
         return True
@@ -498,6 +503,6 @@ def get_all_stations():
     session = Session()
     try:
         stations = session.query(Station).all()
-        return [(station.station_id, station.station_name) for station in stations]
+        return [(station.station_id, station.station_name, station.code) for station in stations]
     finally:
         session.close()
