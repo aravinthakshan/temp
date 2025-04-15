@@ -957,9 +957,6 @@ def searchTrain():
     
     create_back_button(userEntryPage).pack(pady=20)
 
-entryPage()
-root.mainloop()
-
 def add_passenger_row(parent_frame, passenger_num):
     # Create a frame for this passenger
     passenger_frame = tk.Frame(parent_frame, bg=BG_COLOR)
@@ -984,3 +981,7 @@ def add_passenger_row(parent_frame, passenger_num):
     gender_entry = Entry(passenger_frame, width=8, font=ENTRY_FONT, bg=ENTRY_BG, fg=ENTRY_FG)
     gender_entry.pack(side="left", padx=5)
     gender_entry.winfo_name = lambda: f"gender_{passenger_num}"
+    
+entryPage()
+root.mainloop()
+
